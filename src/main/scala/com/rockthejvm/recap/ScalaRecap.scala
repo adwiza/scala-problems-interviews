@@ -99,6 +99,52 @@ object ScalaRecap extends App {
   /**
    * Pattern matching
    */
+  val x = 2
+  val order = x match {
+    case 1 => "first"
+    case 2 => "second"
+    case 3 => "third"
+    case _ => x + "th"
+  }
+
+  val bob = Person("Bob", 22)
+  val greeting = bob match {
+    case Person(n, _) => s"Hi, my name is $n"
+  }
+
+  println(order)
+  println(greeting)
+
+  // all patterns
+
+  /**
+   * For the hardcore peeps: implicits.
+   * Implicits are a beast. We are only going to use implicits for the below use cases.
+   * Implicits are hard and OPTIONAL in this course, just for the sake of Scala's expressiveness.
+   *
+   * The advanced Scala course explains everything about implicits.
+   */
+
+  // use case 1: implicit arguments
+  implicit val descendingIntOrdering: Ordering[Int] = Ordering.fromLessThan((a, b) => b > a) // comparison object
+  val theObviousTruth = descendingIntOrdering.lteq(99, 100)
+  //                                          ^^^^ other methods: lt, gt, qteq, etc.
+
+  //implicit orderings are used for sorting methods
+  val descendingList = List(1, 2, 3, 4).sorted
+  //                                          ^ here the compiler infects the implicit ordering I defined above, as argument
+
+  // use case 2: implicit conversion
+  implicit class MyRichInt(number: Int) {
+    def isPositive = number > 0
+  }
+
+  val oneSign = 1.isPositive
+  // equivalent with new MyRichInt(1).isPositive
+  // the auto-conversion is done at compile time
+  println(oneSign)
+
+
 
 
 
