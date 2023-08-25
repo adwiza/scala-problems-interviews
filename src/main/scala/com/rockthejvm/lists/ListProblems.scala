@@ -21,6 +21,9 @@ sealed abstract class RList[+T] {
   // the size of the list
   def length: Int
 
+  // reverse the list
+  def reverse: RList[T]
+
 } // Our list
 
 case object RNil extends RList[Nothing] {
@@ -37,6 +40,9 @@ case object RNil extends RList[Nothing] {
   override def apply(index: Int): Nothing = throw new NoSuchElementException()
   // the size of the list
   override def length: Int = 0
+
+  // reverse the empty list
+  override def reverse: RList[Nothing] = RNil
  }
 //  override def headOption: Option[Nothing] = None
 
@@ -77,6 +83,7 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     else applyTailrec(this, 0)
   }
 
+  // the size of the list
   override def length: Int = {
     /*
     [1, 2, 3, 4, 5].length = lengthTailrec([1,2, 3, 4, 5], 0
@@ -97,6 +104,28 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     }
     lengthTailrec(this, 0)
   }//1 + tail.length
+
+  // reverse this list into a new list
+  override def reverse: RList[T] = {
+    // Complexity: O(N)
+    @tailrec
+    def reverseTailRec(remainingList: RList[T], result: RList[T]): RList[T] = {
+      if (remainingList.isEmpty) result
+      else reverseTailRec(remainingList.tail, remainingList.head :: result)
+     }
+
+      reverseTailRec(this, RNil)
+  }
+}
+
+object RList {
+  def from[T](iterable: Iterable[T]): RList[T] = {
+    def convertToRlistTailrec(remaining: Iterable[T], acc: RList[T]): RList[T] = {
+      if (remaining.isEmpty) acc
+      else convertToRlistTailrec(remaining.tail, remaining.head :: acc)
+    }
+    convertToRlistTailrec(iterable, RNil).reverse
+  }
 }
 
 
@@ -104,12 +133,21 @@ object ListProblems extends App {
 
   RNil.::(2) == 2 :: RNil
   val aSmallList = 1 :: 2 :: 3 :: RNil // Rnil.::(3).::(2).::(1)  //::(1, ::(2, ::(3, RNil)))
+  val aLargeList = RList.from(1 to 10000)
   println(aSmallList)
 
   // test get-kth
   println(aSmallList.apply(0))
   println(aSmallList.apply(2))
+  println(aLargeList.apply(8735))
+
   // test length
   println(aSmallList.length)
+  println(aLargeList.length)
+
+  // test reverse
+  println(aSmallList.reverse)
+  println(aLargeList.reverse)
+
 
 }
