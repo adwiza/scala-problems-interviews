@@ -24,6 +24,9 @@ sealed abstract class RList[+T] {
   // reverse the list
   def reverse: RList[T]
 
+  // concatinate another list to one
+  def ++[S >: T](anotherList: RList[S]): RList[S]
+
 } // Our list
 
 case object RNil extends RList[Nothing] {
@@ -43,6 +46,9 @@ case object RNil extends RList[Nothing] {
 
   // reverse the empty list
   override def reverse: RList[Nothing] = RNil
+
+  // append another list
+  def ++[S >: Nothing](anotherList: RList[S]): RList[S] = anotherList
  }
 //  override def headOption: Option[Nothing] = None
 
@@ -116,6 +122,21 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
 
       reverseTailRec(this, RNil)
   }
+
+  // append another list
+  def ++[S >: T](anotherList: RList[S]): RList[S] = { // head :: (tail.++(anotherList)) //stack recursive
+    /*
+    Complexity: O(M + N)
+    length of this list = N
+    length of the other list = Mß
+     */
+    def conncatTailrec(remainingList: RList[S], acc: RList[S]): RList[S] = {
+      if (remainingList.isEmpty) acc
+      else conncatTailrec(remainingList.tail, remainingList.head :: acc)
+    }
+
+    conncatTailrec(anotherList, this.reverse).reverse
+  }
 }
 
 object RList {
@@ -148,6 +169,9 @@ object ListProblems extends App {
   // test reverse
   println(aSmallList.reverse)
   println(aLargeList.reverse)
+
+  // test concat
+  println(aSmallList ++ aLargeList)
 
 
 }
