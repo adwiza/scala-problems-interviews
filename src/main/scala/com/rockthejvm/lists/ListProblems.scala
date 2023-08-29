@@ -24,8 +24,17 @@ sealed abstract class RList[+T] {
   // reverse the list
   def reverse: RList[T]
 
-  // concatinate another list to one
+  // concatenate another list to one
   def ++[S >: T](anotherList: RList[S]): RList[S]
+
+  // remove an element at a given index, return a NEW list
+  def removeAt(index: Int): RList[T]
+
+  // the big3
+  def map[S](f: T => S): RList[S]
+  def flatMap[S](f: T => RList[S]): RList[S]
+  def filter(f: T => Boolean): RList[T]
+
 
 } // Our list
 
@@ -49,6 +58,14 @@ case object RNil extends RList[Nothing] {
 
   // append another list
   def ++[S >: Nothing](anotherList: RList[S]): RList[S] = anotherList
+
+  // remove an element
+  override def removeAt(index: Int): RList[Nothing] = RNil
+
+  // the big 3
+  override def map[S](f: Nothing => S): RList[S] = RNil
+  override def flatMap[S](f: Nothing => RList[S]): RList[S] = RNil
+  override def filter(f: Nothing => Boolean): RList[Nothing] = RNil
  }
 //  override def headOption: Option[Nothing] = None
 
@@ -137,6 +154,55 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
 
     conncatTailrec(anotherList, this.reverse).reverse
   }
+
+  // remove an element
+  override def removeAt(index: Int): RList[T] = {
+    // Complexity: O(N)
+    @tailrec
+    def removeTailrec(remaining: RList[T], currentIndex: Int, predecessors: RList[T]): RList[T] = {
+      if (currentIndex == index) predecessors.reverse ++ remaining.tail
+      else if (remaining.isEmpty) predecessors.reverse
+      else removeTailrec(remaining.tail, currentIndex + 1, remaining.head :: predecessors)
+    }
+
+    if (index < 0) this
+    else removeTailrec(this, 0, RNil)
+  }
+
+  // big 3
+  override def map[S](f: T => S): RList[S] = {
+    // Complexity: O(N)
+    @tailrec
+    def mapTailrec(remaining: RList[T], accumulator: RList[S]): RList[S] = {
+      if (remaining.isEmpty) accumulator.reverse
+      else mapTailrec(remaining.tail, f(remaining.head) :: accumulator)
+    }
+    mapTailrec(this, RNil)
+  }
+
+  override def flatMap[S](f: T => RList[S]): RList[S] = {
+    // Complexity: O(Z^2)
+    @tailrec
+    def flatMapTailrec(remaining: RList[T], accumulator:RList[S]): RList[S] = {
+      if (remaining.isEmpty) accumulator.reverse
+      else flatMapTailrec(remaining.tail, f(remaining.head).reverse ++ accumulator)
+    }
+    flatMapTailrec(this, RNil)
+
+  }
+
+  override def filter(predicate: T => Boolean): RList[T] = {
+    /*
+    Complexity: O(N)
+     */
+    @tailrec
+    def filterTailrec(remaining: RList[T], accumulator: RList[T]): RList[T] = {
+      if (remaining.isEmpty) accumulator.reverse // twist
+      else if (predicate(remaining.head)) filterTailrec(remaining.tail, remaining.head :: accumulator)
+      else filterTailrec(remaining.tail, accumulator)
+    }
+    filterTailrec(this, RNil)
+  }
 }
 
 object RList {
@@ -172,6 +238,20 @@ object ListProblems extends App {
 
   // test concat
   println(aSmallList ++ aLargeList)
+
+  // test removeAt
+  println(aLargeList.removeAt(13))
+
+  // map
+  println(aLargeList.map(x => 2 * x))
+
+  // flatMap
+  val time = System.currentTimeMillis()
+  aLargeList.flatMap(x => x :: (2 * x) :: RNil)
+  println(System.currentTimeMillis() - time)
+
+  // filter
+  println(aLargeList.filter(_ % 2 == 0)) // _ -> x => x
 
 
 }
