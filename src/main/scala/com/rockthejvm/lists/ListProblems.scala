@@ -35,6 +35,14 @@ sealed abstract class RList[+T] {
   def flatMap[S](f: T => RList[S]): RList[S]
   def filter(f: T => Boolean): RList[T]
 
+  /**
+   * Medium difficulty problems
+   */
+  // run-length encoding
+  def rle: RList[(T, Int)]
+
+  // duplicate each element a number of times in a row
+  def duplicateEach(k: Int): RList[T]
 
 } // Our list
 
@@ -66,7 +74,15 @@ case object RNil extends RList[Nothing] {
   override def map[S](f: Nothing => S): RList[S] = RNil
   override def flatMap[S](f: Nothing => RList[S]): RList[S] = RNil
   override def filter(f: Nothing => Boolean): RList[Nothing] = RNil
- }
+
+  /**
+   * Medium difficulty problems
+   */
+  override def rle: RList[(Nothing, Int)] = RNil
+
+  // duplicate each element a number of times in a row
+  override def duplicateEach(k: Int): RList[Nothing] = RNil
+}
 //  override def headOption: Option[Nothing] = None
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -203,6 +219,34 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     }
     filterTailrec(this, RNil)
   }
+
+  /**
+   * Medium difficulty problems
+   */
+  override def rle: RList[(T, Int)] =  {
+    // Complexity: O(N)
+    @tailrec
+    def rleTailrec(remaining: RList[T], currentTuple: (T, Int), accumulator: RList[(T, Int)]): RList[(T, Int)] = {
+      if (remaining.isEmpty && currentTuple._2 == 0) accumulator
+      else if (remaining.isEmpty) currentTuple :: accumulator
+      else if (remaining.head == currentTuple._1) rleTailrec(remaining.tail, currentTuple.copy(_2 = currentTuple._2 + 1), accumulator)
+      else rleTailrec(remaining.tail, (remaining.head, 1), currentTuple :: accumulator)
+    }
+    rleTailrec(this.tail, (this.head, 1), RNil).reverse
+  }
+
+  // duplicate each element a number of times in a row
+  override def duplicateEach(k: Int): RList[T] = {
+    // Complexity: O(N * K)
+    @tailrec
+    def duplicateTailrec(remaining: RList[T], currentElement: T, nDuplicates: Int, accumulator: RList[T]): RList[T] = {
+      if (remaining.isEmpty && nDuplicates == k) accumulator.reverse
+      else if (remaining.isEmpty) duplicateTailrec(remaining, currentElement, nDuplicates + 1, currentElement :: accumulator)
+      else if (nDuplicates == k) duplicateTailrec(remaining.tail, remaining.head, 0, accumulator)
+      else duplicateTailrec(remaining, currentElement, nDuplicates + 1, currentElement :: accumulator)
+    }
+    duplicateTailrec(this.tail, this.head, 0, RNil )
+  }
 }
 
 object RList {
@@ -221,37 +265,50 @@ object ListProblems extends App {
   RNil.::(2) == 2 :: RNil
   val aSmallList = 1 :: 2 :: 3 :: RNil // Rnil.::(3).::(2).::(1)  //::(1, ::(2, ::(3, RNil)))
   val aLargeList = RList.from(1 to 10000)
-  println(aSmallList)
 
-  // test get-kth
-  println(aSmallList.apply(0))
-  println(aSmallList.apply(2))
-  println(aLargeList.apply(8735))
+  def testEasyFunctions() = {
 
-  // test length
-  println(aSmallList.length)
-  println(aLargeList.length)
+      // test get-kth
+      println(aSmallList.apply(0))
+      println(aSmallList.apply(2))
+      println(aLargeList.apply(8735))
 
-  // test reverse
-  println(aSmallList.reverse)
-  println(aLargeList.reverse)
+      // test length
+      println(aSmallList.length)
+      println(aLargeList.length)
 
-  // test concat
-  println(aSmallList ++ aLargeList)
+      // test reverse
+      println(aSmallList.reverse)
+      println(aLargeList.reverse)
 
-  // test removeAt
-  println(aLargeList.removeAt(13))
+      // test concat
+      println(aSmallList ++ aLargeList)
 
-  // map
-  println(aLargeList.map(x => 2 * x))
+      // test removeAt
+      println(aLargeList.removeAt(13))
 
-  // flatMap
-  val time = System.currentTimeMillis()
-  aLargeList.flatMap(x => x :: (2 * x) :: RNil)
-  println(System.currentTimeMillis() - time)
+      // map
+      println(aLargeList.map(x => 2 * x))
 
-  // filter
-  println(aLargeList.filter(_ % 2 == 0)) // _ -> x => x
+      // flatMap
+      val time = System.currentTimeMillis()
+      aLargeList.flatMap(x => x :: (2 * x) :: RNil)
+      println(System.currentTimeMillis() - time)
+      // filter
+    println(aLargeList.filter(_ % 2 == 0)) // _ -> x => x
+  }
 
+  /**
+   * Medium difficulty functions
+   */
+  def testMediumDifficultyFunctions() = {
+    // run-length encoding
+    println((1 :: 1 :: 1 :: 2 :: 3 :: 3 :: 4 :: 5 :: 5 :: 5 :: RNil).rle)
+    // duplicateEach
+    println(aSmallList.duplicateEach(4))
+
+  }
+
+  testMediumDifficultyFunctions()
 
 }
