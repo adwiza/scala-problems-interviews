@@ -44,6 +44,10 @@ sealed abstract class RList[+T] {
   // duplicate each element a number of times in a row
   def duplicateEach(k: Int): RList[T]
 
+  // rotation  by a number of positions to the left
+  def rotate(k: Int): RList[T]
+
+
 } // Our list
 
 case object RNil extends RList[Nothing] {
@@ -82,6 +86,9 @@ case object RNil extends RList[Nothing] {
 
   // duplicate each element a number of times in a row
   override def duplicateEach(k: Int): RList[Nothing] = RNil
+
+  // rotate by a number of positions to the left
+  override def rotate(k: Int): RList[Nothing] = RNil
 }
 //  override def headOption: Option[Nothing] = None
 
@@ -247,6 +254,20 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     }
     duplicateTailrec(this.tail, this.head, 0, RNil )
   }
+
+  // rotate by a number of positions to the left
+  override def rotate(k: Int): RList[T] = {
+    @tailrec
+    def rotateTailrec(remaining: RList[T], rotationsLeft: Int, buffer: RList[T]): RList[T] = {
+      if (remaining.isEmpty && rotationsLeft == 0) this
+      else if (remaining.isEmpty) rotateTailrec(this, rotationsLeft, RNil)
+      else if (rotationsLeft == 0) remaining ++ buffer.reverse
+      else rotateTailrec(remaining.tail, rotationsLeft - 1, remaining.head :: buffer)
+    }
+
+    rotateTailrec(this, k, RNil)
+
+  }
 }
 
 object RList {
@@ -265,6 +286,7 @@ object ListProblems extends App {
   RNil.::(2) == 2 :: RNil
   val aSmallList = 1 :: 2 :: 3 :: RNil // Rnil.::(3).::(2).::(1)  //::(1, ::(2, ::(3, RNil)))
   val aLargeList = RList.from(1 to 10000)
+  val oneToTen = RList.from(1 to 10)
 
   def testEasyFunctions() = {
 
@@ -306,6 +328,10 @@ object ListProblems extends App {
     println((1 :: 1 :: 1 :: 2 :: 3 :: 3 :: 4 :: 5 :: 5 :: 5 :: RNil).rle)
     // duplicateEach
     println(aSmallList.duplicateEach(4))
+    // rotate
+    for {
+      i <- 1 to 20
+    } println(oneToTen.rotate(i))
 
   }
 
