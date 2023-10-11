@@ -1,6 +1,7 @@
 package com.rockthejvm.lists
 
 import scala.annotation.tailrec
+import scala.util.Random
 
 sealed abstract class RList[+T] {
   /**
@@ -47,6 +48,9 @@ sealed abstract class RList[+T] {
   // rotation  by a number of positions to the left
   def rotate(k: Int): RList[T]
 
+  // random sample
+  def sample(k: Int): RList[T]
+
 
 } // Our list
 
@@ -89,6 +93,9 @@ case object RNil extends RList[Nothing] {
 
   // rotate by a number of positions to the left
   override def rotate(k: Int): RList[Nothing] = RNil
+
+  // random samples
+  override def sample(k: Int): RList[Nothing] = RNil
 }
 //  override def headOption: Option[Nothing] = None
 
@@ -268,6 +275,26 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     rotateTailrec(this, k, RNil)
 
   }
+
+  // random samples
+  override def sample(k: Int): RList[T] = {
+    val random = new Random(System.currentTimeMillis())
+    val maxIndex = this.length
+    @tailrec
+    def sampleTailrec(nRemaining: Int, accumulator: RList[T]): RList[T] = {
+      if (nRemaining == 0) accumulator
+      else {
+        val index = random.nextInt(maxIndex)
+        val newNumber = this(index)
+        sampleTailrec(nRemaining - 1, newNumber :: accumulator)
+      }
+    }
+
+    def sampleElegant: RList[T] =
+      RList.from(1 to k).map(_ => random.nextInt(maxIndex)).map(index => this(index))
+    if (k < 0) RNil
+    else sampleElegant
+  }
 }
 
 object RList {
@@ -332,6 +359,9 @@ object ListProblems extends App {
     for {
       i <- 1 to 20
     } println(oneToTen.rotate(i))
+
+    // random samples
+    println(aLargeList.sample(10))
 
   }
 
