@@ -217,7 +217,21 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       if (remaining.isEmpty) accumulator.reverse
       else flatMapTailrec(remaining.tail, f(remaining.head).reverse ++ accumulator)
     }
-    flatMapTailrec(this, RNil)
+
+    @tailrec
+    def betterFlatMap(remaining: RList[T], accumulator: RList[RList[S]]): RList[S] = {
+      if (remaining.isEmpty) concatenateAll(accumulator, RNil, RNil)
+      else betterFlatMap(remaining.tail, f(remaining.head).reverse :: accumulator)
+    }
+
+    @tailrec
+    def concatenateAll(elements: RList[RList[S]], currentList: RList[S], accumulator: RList[S]): RList[S] = {
+      if (currentList.isEmpty && elements.isEmpty) accumulator
+      else if (currentList.isEmpty) concatenateAll(elements.tail, elements.head, accumulator)
+      else concatenateAll(elements, currentList.tail, currentList.head :: accumulator)
+    }
+
+    betterFlatMap(this, RNil)
 
   }
 
@@ -362,6 +376,12 @@ object ListProblems extends App {
 
     // random samples
     println(aLargeList.sample(10))
+
+    // better flatMap
+    println(aSmallList.flatMap(x => x :: (2 * x) :: RNil))
+    val time = System.currentTimeMillis()
+    aLargeList.flatMap(x => x :: (2 * x) :: RNil)
+    println(System.currentTimeMillis() - time)
 
   }
 
