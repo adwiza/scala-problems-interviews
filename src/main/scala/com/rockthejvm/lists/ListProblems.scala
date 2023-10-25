@@ -1,5 +1,6 @@
 package com.rockthejvm.lists
 
+import scala.Console.println
 import scala.annotation.tailrec
 import scala.util.Random
 
@@ -51,6 +52,14 @@ sealed abstract class RList[+T] {
   // random sample
   def sample(k: Int): RList[T]
 
+  /**
+   * Hard problems
+   */
+
+  // sorting the list in the order defined by Ordering object
+  def insertionSort[S >: T](ordering: Ordering[S]): RList[S]
+  def mergeSort[S >: T](ordering: Ordering[S]): RList[S]
+
 
 } // Our list
 
@@ -96,6 +105,13 @@ case object RNil extends RList[Nothing] {
 
   // random samples
   override def sample(k: Int): RList[Nothing] = RNil
+
+  /**
+   * Hard problems
+   */
+  override def insertionSort[S >: Nothing](ordering: Ordering[S]): RList[S] = RNil
+  override def mergeSort[S >: Nothing](ordering: Ordering[S]): RList[S] = RNil
+
 }
 //  override def headOption: Option[Nothing] = None
 
@@ -309,6 +325,54 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     if (k < 0) RNil
     else sampleElegant
   }
+
+  /**
+   * Hard problems
+   */
+  override def insertionSort[S >: T](ordering: Ordering[S]): RList[S] = {
+    @tailrec
+    def insertSorted(element: T, before: RList[S], after: RList[S]): RList[S] = {
+      if (after.isEmpty || ordering.lteq(element, after.head)) before.reverse ++ (element :: after)
+      else insertSorted(element, after.head :: before, after.tail)
+    }
+
+    @tailrec
+    def insertSortTailrec(remaining: RList[T], acc: RList[S]): RList[S] = {
+      if (remaining.isEmpty) acc
+      else insertSortTailrec(remaining.tail, insertSorted(remaining.head, RNil, acc))
+    }
+    insertSortTailrec(this, RNil)
+  }
+
+  override def mergeSort[S >: T](ordering: Ordering[S]): RList[S] = {
+    @tailrec
+    def merge(listA: RList[S], listB: RList[S], accumulator: RList[S]): RList[S] = {
+      if (listA.isEmpty) accumulator.reverse ++ listB
+      else if (listB.isEmpty) accumulator.reverse ++ listA
+      else if (ordering.lteq(listA.head, listB.head)) merge(listA.tail, listB, listA.head :: accumulator)
+      else merge(listA, listB.tail, listB.head :: accumulator)
+
+    }
+
+    @tailrec
+    def mergeSortTailrec(smallLists: RList[RList[S]], bigLists: RList[RList[S]]): RList[S] = {
+      if (smallLists.isEmpty) {
+        if (bigLists.isEmpty) RNil
+        else if (bigLists.tail.isEmpty) bigLists.head
+        else mergeSortTailrec(bigLists, RNil)
+      } else if (smallLists.tail.isEmpty) {
+        if (bigLists.isEmpty) smallLists.head
+        else mergeSortTailrec(smallLists.head :: bigLists, RNil)
+      }
+      else {
+        val first = smallLists.head
+        val second = smallLists.tail.head
+        val merged = merge(first, second, RNil)
+        mergeSortTailrec(smallLists.tail.tail, merged :: bigLists)
+      }
+    }
+    mergeSortTailrec(this.map(x => x :: RNil), RNil)
+  }
 }
 
 object RList {
@@ -385,6 +449,19 @@ object ListProblems extends App {
 
   }
 
-  testMediumDifficultyFunctions()
+  def testHardFunctions() = {
+    val anUnorderedList = 3 :: 1 :: 2 :: 4 :: 5 :: RNil
+    val ordering = Ordering.fromLessThan[Int](_ < _ )
+    val listToSort = aLargeList.sample(10)
+
+    // insertion sort
+    println(anUnorderedList.insertionSort(ordering))
+    println(listToSort.insertionSort(ordering))
+    // merge sort
+    println(listToSort.mergeSort(ordering))
+
+  }
+
+  testHardFunctions()
 
 }
