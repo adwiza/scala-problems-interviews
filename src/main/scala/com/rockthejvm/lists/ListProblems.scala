@@ -1,5 +1,7 @@
 package com.rockthejvm.lists
 
+import com.rockthejvm.lists
+
 import scala.Console.println
 import scala.annotation.tailrec
 import scala.util.Random
@@ -59,6 +61,7 @@ sealed abstract class RList[+T] {
   // sorting the list in the order defined by Ordering object
   def insertionSort[S >: T](ordering: Ordering[S]): RList[S]
   def mergeSort[S >: T](ordering: Ordering[S]): RList[S]
+  def quickSort[S >: T](ordering: Ordering[S]): RList[S]
 
 
 } // Our list
@@ -111,6 +114,10 @@ case object RNil extends RList[Nothing] {
    */
   override def insertionSort[S >: Nothing](ordering: Ordering[S]): RList[S] = RNil
   override def mergeSort[S >: Nothing](ordering: Ordering[S]): RList[S] = RNil
+
+  override def quickSort[S >: Nothing](ordering: Ordering[S]): RList[S] = RNil
+
+
 
 }
 //  override def headOption: Option[Nothing] = None
@@ -373,6 +380,30 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     }
     mergeSortTailrec(this.map(x => x :: RNil), RNil)
   }
+
+  override def quickSort[S >: T](ordering: Ordering[S]): RList[S] = {
+    @tailrec
+    def partition(list: RList[T], pivot: T, smaller: RList[T], larger: RList[T]): (RList[T], RList[T]) = {
+      if (list.isEmpty) (smaller, larger)
+      else if (ordering.lteq(list.head, pivot)) partition(list.tail, pivot, list.head :: smaller, larger)
+      else partition(list.tail, pivot, smaller, list.head :: larger)
+    }
+
+    @tailrec
+    def quickSortTailrec(remainingLists: RList[RList[T]], accumulator: RList[RList[T]]): RList[T] = {
+      if (remainingLists.isEmpty) accumulator.flatMap(smallList => smallList).reverse
+      else if (remainingLists.head.isEmpty) quickSortTailrec(remainingLists.tail, accumulator)
+      else if (remainingLists.head.tail.isEmpty) quickSortTailrec(remainingLists.tail, remainingLists.head :: accumulator)
+      else {
+        val list = remainingLists.head
+        val pivot = list.head
+        val listToSplit = list.tail
+        val (smaller, larger) = partition(listToSplit, pivot, RNil, RNil)
+        quickSortTailrec(smaller :: (pivot :: RNil) :: larger :: remainingLists.tail, accumulator)
+      }
+    }
+    quickSortTailrec(this :: RNil, RNil)
+  }
 }
 
 object RList {
@@ -459,6 +490,8 @@ object ListProblems extends App {
     println(listToSort.insertionSort(ordering))
     // merge sort
     println(listToSort.mergeSort(ordering))
+    // quick sort
+    println(listToSort.quickSort(ordering))
 
   }
 
