@@ -22,6 +22,7 @@ object NumbersOps {
     def decompose: List[Int] = {
       assert(n > 0)
 
+      @tailrec
       def decomposeTailrec(remaining: Int, currentDivisor: Int, accumulator: List[Int]): List[Int] = {
         if (currentDivisor > Math.sqrt(remaining)) remaining :: accumulator
         else if (remaining % currentDivisor == 0) decomposeTailrec(remaining / currentDivisor, currentDivisor, currentDivisor :: accumulator)
