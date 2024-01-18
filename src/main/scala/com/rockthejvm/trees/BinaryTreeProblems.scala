@@ -28,6 +28,14 @@ sealed abstract class BTree[+T] {
 
   // mirror a tree
   def mirror: BTree[T]
+
+  // compare the shape of two trees
+  def sameShapeAs[S >: T](that: BTree[S]): Boolean
+
+  // tree is symmetrical with respect to the root node
+  def isSymmetrical: Boolean
+
+
 }
 
 case object BEnd extends BTree[Nothing] {
@@ -43,17 +51,24 @@ case object BEnd extends BTree[Nothing] {
   override def collectLeaves: List[BTree[Nothing]] = List()
   override def leafCount: Int = 0
 
+  /**
+   * Medium difficulty problems
+   */
+  // the number of nodes in the tree
+  override val size: Int = 0
+
   // nodes at a given level
   override def collectNodes(level: Int): List[BTree[Nothing]] = List()
 
   // mirror
   override def mirror: BTree[Nothing] = BEnd
 
-  /**
-   * Medium difficulty problems
-   */
-  // the number of nodes in the tree
-  override val size: Int = 0
+  // structure comparison
+  override def sameShapeAs[S >: Nothing](that: BTree[S]): Boolean = that.isEmpty
+
+  // symmetrical
+  override def isSymmetrical: Boolean = true
+
 }
 
 case class  BNode[+T](override val value: T, override val left: BTree[T], override val right: BTree[T]) extends BTree[T] {
@@ -128,6 +143,31 @@ case class  BNode[+T](override val value: T, override val left: BTree[T], overri
     }
     mirrorTailrec(List(this), Set(), List())
   }
+
+  // shape comparison
+  override def sameShapeAs[S >: T](that: BTree[S]): Boolean = {
+    @tailrec
+    def sameShapeAsTailrec(thisRemaining: List[BTree[S]], thatRemaining: List[BTree[S]]): Boolean = {
+      if (thisRemaining.isEmpty) thatRemaining.isEmpty
+      else if (thatRemaining.isEmpty) thisRemaining.isEmpty
+      else {
+        val thisNode = thisRemaining.head
+        val thatNone = thatRemaining.head
+
+        if (thisNode.isEmpty) thatNone.isEmpty && sameShapeAsTailrec(thisRemaining.tail, thatRemaining.tail)
+        else if (thisNode.isLeaf) thatNone.isLeaf && sameShapeAsTailrec(thisRemaining.tail, thatRemaining.tail)
+        else sameShapeAsTailrec(
+          thisNode.left :: thisNode.right :: thisRemaining.tail,
+          thatNone.left :: thatNone.right :: thatRemaining.tail
+        )
+      }
+    }
+
+    sameShapeAsTailrec(List(this), List(that))
+  }
+
+  // symmetry
+  override def isSymmetrical: Boolean = sameShapeAs(this.mirror)
 }
 object BinaryTreeProblems extends App {
 
@@ -142,6 +182,34 @@ object BinaryTreeProblems extends App {
     BNode(6,
       BNode(7, BEnd, BEnd),
       BNode(8, BEnd, BEnd)
+    )
+  )
+
+  val tree10x = BNode(10,
+    BNode(20,
+      BNode(30, BEnd, BEnd),
+      BNode(40,
+        BEnd,
+        BNode(50, BEnd, BEnd),
+      )
+    ),
+    BNode(60,
+      BNode(70, BEnd, BEnd),
+      BNode(80, BEnd, BEnd)
+    )
+  )
+
+  val tree10xExtra = BNode(10,
+    BNode(20,
+      BNode(30, BEnd, BEnd),
+      BNode(40,
+        BEnd,
+        BEnd
+      )
+    ),
+    BNode(60,
+      BNode(70, BEnd, BEnd),
+      BNode(80, BEnd, BEnd)
     )
   )
   /**
@@ -163,4 +231,11 @@ object BinaryTreeProblems extends App {
 
   // mirroring
   println(tree.mirror)
+
+  // same shape as
+  println(tree.sameShapeAs(tree10x))
+  println(tree.sameShapeAs(tree10xExtra))
+
+  // symmetry
+  println(tree10xExtra.isSymmetrical)
 }
